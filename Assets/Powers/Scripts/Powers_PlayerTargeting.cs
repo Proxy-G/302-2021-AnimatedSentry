@@ -1,4 +1,3 @@
-using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
@@ -6,23 +5,47 @@ using UnityEngine;
 public class Powers_PlayerTargeting : MonoBehaviour
 {
     public Transform target;
+    public Powers_CamOrbit camOrbit;
     public bool wantsToTarget;
+    public bool wantsToAttack;
     public float visionDistance = 10;
     public float visionAngle = 45;
+
+    //references player arm bones
+    public Transform armL;
+    public Transform armR;
+
+    private Vector3 startPosArmL;
+    private Vector3 startPosArmR;
+
+    /// <summary>
+    /// references particle system for gun muzzle flash
+    /// </summary>
+    public ParticleSystem prefabMuzzleFlash;
+    public Transform handL;
+    public Transform handR;
 
     private List<Powers_TargetableObject> potentialTargets = new List<Powers_TargetableObject>();
 
     float scanCooldown = 0;
     float pickCooldown = 0;
+    float shootCooldown = 0;
+
+    public float roundPerSecond = 6;
 
     void Start()
     {
         Cursor.lockState = CursorLockMode.Locked;
+
+        startPosArmL = armL.localPosition;
+        startPosArmR = armR.localPosition;
     }
 
     void Update()
     {
         wantsToTarget = Input.GetButton("Fire2");
+        wantsToAttack = Input.GetButton("Fire1");
+
         if (!wantsToTarget) target = null;
 
         scanCooldown -= Time.deltaTime; //count down each tick
@@ -31,17 +54,22 @@ public class Powers_PlayerTargeting : MonoBehaviour
         pickCooldown -= Time.deltaTime; //count down each tick
         if (pickCooldown <= 0) PickTarget(); //once countdown completes, pick target
 
+        shootCooldown -= Time.deltaTime; //count down each tick
+
         // if we have target and we can't see it, set target null
         if (target && CanSeeThing(target) == false) target = null;
+
+        SlideArmsHome();
+        DoAttack(); //once countdown completes, pick target
     }
 
-    private bool CanSeeThing(Transform targetObject){
+    private bool CanSeeThing(Transform targetObject) {
 
         if (!targetObject) return false; //error
 
         //check distance
         Vector3 vToThing = targetObject.position - transform.position;
-        if (vToThing.sqrMagnitude > visionDistance*visionDistance) return false; //object is too far away to see
+        if (vToThing.sqrMagnitude > visionDistance * visionDistance) return false; //object is too far away to see
 
         //check direction
         if (Vector3.Angle(transform.forward, vToThing) > visionAngle) return false; //outside cone of vision
@@ -87,5 +115,46 @@ public class Powers_PlayerTargeting : MonoBehaviour
             }
 
         }
-    }    
+    }
+
+    private void DoAttack()
+    {
+        if (shootCooldown > 0) return; //too soon
+        if (!wantsToTarget) return; //player not targeting
+        if (!wantsToAttack) return; //player not shooting
+        if (target == null) return; //no target available
+        if (!CanSeeThing(target)) return; //target not in sight
+
+        //set cooldown
+        shootCooldown = 1 / roundPerSecond;
+
+        Powers_HealthSystem targetHealth = target.GetComponent<Powers_HealthSystem>();
+
+        if(targetHealth)
+        {
+            targetHealth.TakeDamage(Random.Range(18, 25));
+        }
+
+        //attack!
+
+        if(handL) Instantiate(prefabMuzzleFlash, handL.position, handL.rotation);
+        if(handR) Instantiate(prefabMuzzleFlash, handR.position, handR.rotation);
+        camOrbit.Shake(3);
+
+        //trigger arm anim
+
+        //rotates arms up:
+        armL.localEulerAngles += new Vector3(-15, 0, 0);
+        armR.localEulerAngles += new Vector3(-15, 0, 0);
+
+        //move arms back:
+        armL.position += -armL.transform.forward * .05f;
+        armR.position += -armR.transform.forward * .05f;
+    }
+
+    private void SlideArmsHome()
+    {
+        armL.localPosition = Powers_AnimMath.Slide(armL.localPosition, startPosArmL, 0.02f);
+        armR.localPosition = Powers_AnimMath.Slide(armR.localPosition, startPosArmR, 0.02f);
+    }
 }

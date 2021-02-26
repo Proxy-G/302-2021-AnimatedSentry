@@ -10,6 +10,11 @@ public class Powers_CamOrbit : MonoBehaviour
     public float mouseSensitivityX = 4;
     public float mouseSensitivityY = 4;
 
+    public float regDistance = 7;
+    public float zoomDistance = 4;
+
+    public float shakeIntensity = 0;
+
     private float yaw = 0;
     private float pitch = 0;
     
@@ -32,6 +37,8 @@ public class Powers_CamOrbit : MonoBehaviour
 
         // "zoom" in the camera
         ZoomCamera();
+
+        ShakeCamera();
     }
 
     private bool IsTargeting()
@@ -41,10 +48,21 @@ public class Powers_CamOrbit : MonoBehaviour
 
     private void ZoomCamera()
     {
-        float dis = 7;
-        if (IsTargeting()) dis = 4;
+        float dis = regDistance;
+        if (IsTargeting()) dis = zoomDistance;
 
-        cam.transform.localPosition = Powers_AnimMath.Slide(cam.transform.localPosition, new Vector3(0, 0, -dis), 0.001f);
+        //check if object behind cam
+        RaycastHit hit;
+
+        //do checks to make sure no objects are behind or around the camera
+        bool hitObject = Physics.Raycast(transform.position, -transform.forward, out hit, dis, LayerMask.GetMask("Default"));
+        if(!hitObject) Physics.Raycast(transform.position, -transform.forward + new Vector3(1f, 0, 0), out hit, dis, LayerMask.GetMask("Default"));
+        if (!hitObject) Physics.Raycast(transform.position, -transform.forward + new Vector3(-1f, 0, 0), out hit, dis, LayerMask.GetMask("Default"));
+        if (!hitObject) Physics.Raycast(transform.position, -transform.forward + new Vector3(0, 1f, 0), out hit, dis, LayerMask.GetMask("Default"));
+        if (!hitObject) Physics.Raycast(transform.position, -transform.forward + new Vector3(0, -1f, 0), out hit, dis, LayerMask.GetMask("Default"));
+
+        if (hitObject) cam.transform.localPosition = Powers_AnimMath.Slide(cam.transform.localPosition, new Vector3(0, 0, -hit.distance + .5f), 0.000001f);
+        else cam.transform.localPosition = Powers_AnimMath.Slide(cam.transform.localPosition, new Vector3(0, 0, -dis), 0.001f);
     }
 
     private void RotateCamToLookAtTarget()
@@ -83,10 +101,27 @@ public class Powers_CamOrbit : MonoBehaviour
         }
         else //not targeting/ free look:
         {
-            pitch = Mathf.Clamp(pitch, -10, 89);
+            pitch = Mathf.Clamp(pitch, -20, 89);
         }
 
 
         transform.rotation = Powers_AnimMath.Slide(transform.rotation, Quaternion.Euler(pitch, yaw, 0), .001f);
+    }
+
+    public void Shake(float intensity)
+    {
+        shakeIntensity += intensity;
+        shakeIntensity = Mathf.Clamp(shakeIntensity, 0, 10);
+    }
+
+    private void ShakeCamera()
+    {
+        if (shakeIntensity < 0) shakeIntensity = 0;
+        if (shakeIntensity > 0) shakeIntensity -= Time.deltaTime * (4 * shakeIntensity);
+        else return; //shake intensity is 0, do nothing.
+        
+        Quaternion targetRot = Powers_AnimMath.Lerp(Random.rotation, Quaternion.identity, .999f);
+
+        cam.transform.localRotation = Quaternion.Lerp(cam.transform.localRotation, Random.rotation, 0.001f * shakeIntensity);
     }
 }
