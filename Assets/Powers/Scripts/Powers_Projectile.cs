@@ -9,6 +9,11 @@ public class Powers_Projectile : MonoBehaviour
     public float damage = 0;
     public float velocity = 0;
     public ParticleSystem prefabLazerHit;
+    private bool particlesSpawned = false;
+
+    public AudioSource projectileSource;
+    public MeshRenderer projectileRenderer;
+    public AudioClip hitSFX;
 
     private void Update()
     {
@@ -23,24 +28,31 @@ public class Powers_Projectile : MonoBehaviour
 
     private void OnTriggerEnter(Collider other)
     {        
-        //grab player movement script
-        Powers_PlayerMovement player = other.GetComponent<Powers_PlayerMovement>();
-        //check if player movement script is null. if not, then we have a player
-        if (player)
+        if(!particlesSpawned) //Check to make sure projectile isnt getting destroyed
         {
-            Powers_HealthSystem playerHealth = player.GetComponent<Powers_HealthSystem>();
-            if (playerHealth) playerHealth.TakeDamage(damage);
-        }
+            //grab player movement or turret AI script
+            Powers_PlayerMovement player = other.GetComponent<Powers_PlayerMovement>();
 
-        ProjectileDestroy();
+            if (player) //check if player movement script is null. if not, then we have a player
+            {
+                Powers_HealthSystem playerHealth = player.GetComponent<Powers_HealthSystem>();
+                if (playerHealth) playerHealth.TakeDamage(damage);
+                projectileSource.PlayOneShot(hitSFX);
+            }
+
+            ProjectileDestroy();
+        }
     }
 
     private void ProjectileDestroy()
     {
         //spawn lazer hit particle system
-        if(prefabLazerHit != null) Instantiate(prefabLazerHit, transform.position, transform.rotation);
+        if(prefabLazerHit != null && !particlesSpawned) Instantiate(prefabLazerHit, transform.position, transform.rotation);
+        particlesSpawned = true;
+        //Disable mesh renderer if one is available.
+        if(projectileRenderer != null)projectileRenderer.enabled = false;
 
         //destroy particle
-        Destroy(gameObject);
+        Destroy(gameObject, hitSFX.length);
     }
 }

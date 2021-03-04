@@ -12,6 +12,7 @@ public class Powers_PlayerMovement : MonoBehaviour
     private CharacterController pawn;
     private Powers_PlayerTargeting targetingSystem;
     private Powers_HealthSystem healthSystem;
+    private AudioSource playerSource;
 
     [Space(10)]
     public Transform armL;
@@ -21,6 +22,17 @@ public class Powers_PlayerMovement : MonoBehaviour
     public Transform legL;
     public Transform legR;
 
+    [Space(10)]
+    public List<AudioClip> stepSFX = new List<AudioClip>();
+    public List<AudioClip> jumpSFX = new List<AudioClip>();
+    public AudioClip deathSFX;
+    private bool deathSFXplayed = false;
+
+    private float legLxRotLastFrame = 0;
+    private float legLzRotLastFrame = 0;
+    private bool isLegLgoingForward = false;
+    private bool isLegLgoingRight = false;
+
     private Powers_CamOrbit camOrbit;
     private Powers_PointAt torsoPoint;
     private Powers_PointAt armPointL;
@@ -29,6 +41,10 @@ public class Powers_PlayerMovement : MonoBehaviour
     private float timeLeftGrounded = 0;
     private bool jumpAnimLegsSwitch = true;
     private bool jumpFirst = true;
+    private bool jumpSFXplayed = false;
+
+    [HideInInspector]
+    public float killCount = 0;
 
     public bool isGrounded
     {
@@ -53,10 +69,14 @@ public class Powers_PlayerMovement : MonoBehaviour
 
         targetingSystem = GetComponent<Powers_PlayerTargeting>();
         healthSystem = GetComponent<Powers_HealthSystem>();
+        playerSource = GetComponent<AudioSource>();
 
         torsoPoint = torso.GetComponent<Powers_PointAt>();
         armPointL = armL.GetComponent<Powers_PointAt>();
         armPointR = armR.GetComponent<Powers_PointAt>();
+
+        legLxRotLastFrame = legL.localRotation.x;
+        legLzRotLastFrame = legL.localRotation.z;
     }
 
     // Update is called once per frame
@@ -102,16 +122,46 @@ public class Powers_PlayerMovement : MonoBehaviour
 
         //move pawn:
         CollisionFlags flags = pawn.Move(moveDelta * Time.deltaTime);
-        if(pawn.isGrounded)
+        if (pawn.isGrounded)
         {
             verticalVelocity = 0; //on ground, zero-out vertical-velocity
             timeLeftGrounded = .1f;
             jumpFirst = true;
+            jumpSFXplayed = false;
         }
 
-        if (isGrounded) {
-            if (isJumpHeld) {
+        if (isGrounded)
+        {
+            if (isJumpHeld)
+            {
+                //jump!
                 verticalVelocity = -jumpImpulse;
+                //play random SFX from jump SFX list.
+                if(!jumpSFXplayed) playerSource.PlayOneShot(jumpSFX[Random.Range(0, jumpSFX.Count)]);
+                jumpSFXplayed = true;
+            }
+            else if(pawn.velocity.magnitude >= 0.2f)
+            {
+                //this is used to play footstep SFX when moving forward
+                if (isLegLgoingForward && legLxRotLastFrame > 0 && legL.localRotation.x < 0 || !isLegLgoingForward && legLxRotLastFrame < 0 && legL.localRotation.x > 0)
+                {
+                    if (v >= 0.1f) //Prevents glitchy audio.
+                    {
+                        playerSource.PlayOneShot(stepSFX[Random.Range(0, stepSFX.Count)]);
+                        isLegLgoingForward = !isLegLgoingForward;
+                    }
+                } //this is used to play footstep SFX when moving sideways
+                else if (isLegLgoingRight && legLzRotLastFrame > 0 && legL.localRotation.z < 0 || !isLegLgoingRight && legLzRotLastFrame < 0 && legL.localRotation.z > 0)
+                {
+                    if(h >= 0.1f) //Prevents glitchy audio.
+                    {
+                        playerSource.PlayOneShot(stepSFX[Random.Range(0, stepSFX.Count)]);
+                        isLegLgoingRight = !isLegLgoingRight;
+                    }
+                }
+
+                legLxRotLastFrame = legL.localRotation.x;
+                legLzRotLastFrame = legL.localRotation.z;
             }
         }
     }
@@ -155,10 +205,14 @@ public class Powers_PlayerMovement : MonoBehaviour
     
     private void Death()
     {
+        //Play death SFX on first frame:
+        if (!deathSFXplayed) playerSource.PlayOneShot(deathSFX);
+        deathSFXplayed = true;
+
         //Disable char controller and scripts affecting animation
         pawn.enabled = false;
-        camOrbit.enabled = false;
         targetingSystem.enabled = false;
+        camOrbit.isDead = true;
 
         torsoPoint.enabled = false;
         armPointL.enabled = false;

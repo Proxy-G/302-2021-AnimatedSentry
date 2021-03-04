@@ -6,10 +6,17 @@ using UnityEngine.AI;
 public class Powers_TurretAI : MonoBehaviour
 {
     public Powers_PlayerMovement playerMovementScript;
+
     [Space(10)]
     public Transform shootPosL;
     public Transform shootPosR;
     public GameObject prefabLazerProjectile;
+
+    [Space(10)]
+    public AudioSource turretSource;
+    public AudioClip lazerShootSFX;
+    public AudioClip turretDieSFX;
+
     [HideInInspector]
     public Transform playerPos;
 
@@ -47,6 +54,7 @@ public class Powers_TurretAI : MonoBehaviour
         //If the agent has reached the player, allow the turret to prepare attack
         if (Vector3.Distance(transform.position, playerPos.position) <= agent.stoppingDistance + 0.1f) reachedPlayer = true;
         else reachedPlayer = false;
+
     }
 
     private void AttackAI()
@@ -59,6 +67,7 @@ public class Powers_TurretAI : MonoBehaviour
             //If the next shot is from wing L, create lazer from wing L. Else, create lazer from wing R.
             if(nextShotL) Instantiate(prefabLazerProjectile, shootPosL.position, shootPosL.rotation);
             else Instantiate(prefabLazerProjectile, shootPosR.position, shootPosR.rotation);
+            turretSource.PlayOneShot(lazerShootSFX);
 
             //Flip nextShotL so the next shot comes from opposite wing.
             nextShotL = !nextShotL;

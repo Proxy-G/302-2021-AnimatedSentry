@@ -14,18 +14,23 @@ public class Powers_PlayerTargeting : MonoBehaviour
     private bool wantsToAttack;
 
     //references player arm bones
+    [Space(10)]
     public Transform armL;
     public Transform armR;
 
     private Vector3 startPosArmL;
     private Vector3 startPosArmR;
 
+    [Space(10)]
     /// <summary>
     /// references particle system for gun muzzle flash
     /// </summary>
     public ParticleSystem prefabMuzzleFlash;
     public Transform pistolL;
     public Transform pistolR;
+    public AudioClip pistolShot;
+    private AudioSource pistolLSource;
+    private AudioSource pistolRSource;
     private bool pistolLNext = true;
 
     private List<Powers_TargetableObject> potentialTargets = new List<Powers_TargetableObject>();
@@ -42,6 +47,9 @@ public class Powers_PlayerTargeting : MonoBehaviour
 
         startPosArmL = armL.localPosition;
         startPosArmR = armR.localPosition;
+
+        pistolLSource = pistolL.GetComponent<AudioSource>();
+        pistolRSource = pistolR.GetComponent<AudioSource>();
     }
 
     void Update()
@@ -91,10 +99,11 @@ public class Powers_PlayerTargeting : MonoBehaviour
         //refill targets list
         Powers_TargetableObject[] objects = GameObject.FindObjectsOfType<Powers_TargetableObject>();
 
+
         foreach (Powers_TargetableObject targetObject in objects)
         {
             //if we can see it, add to potential targets
-            if (CanSeeThing(targetObject.transform)) potentialTargets.Add(targetObject);
+            if (CanSeeThing(targetObject.transform) && targetObject.enabled) potentialTargets.Add(targetObject);
         }
     }
 
@@ -118,6 +127,13 @@ public class Powers_PlayerTargeting : MonoBehaviour
             }
 
         }
+
+        //Remove targetable objects that are now null or disabled.
+        for (int i = potentialTargets.Count - 1; i >= 0; i--)
+        {
+            if (potentialTargets[i] == null) potentialTargets.RemoveAt(i);
+            else if (!potentialTargets[i].enabled) potentialTargets.RemoveAt(i);
+        }
     }
 
     private void DoAttack()
@@ -136,14 +152,21 @@ public class Powers_PlayerTargeting : MonoBehaviour
         if(targetHealth)
         {
             targetHealth.TakeDamage(Random.Range(18, 25));
+            //if target has been killed, add one to the kill count.
         }
 
         //attack!
 
-        if(pistolL && pistolLNext) Instantiate(prefabMuzzleFlash, pistolL.position, pistolL.rotation);
-        if(pistolR && !pistolLNext) Instantiate(prefabMuzzleFlash, pistolR.position, pistolR.rotation);
+        if (pistolL && pistolLNext) {
+            Instantiate(prefabMuzzleFlash, pistolL.position, pistolL.rotation);
+            pistolLSource.PlayOneShot(pistolShot);
+        }
+        if (pistolR && !pistolLNext) {
+            Instantiate(prefabMuzzleFlash, pistolR.position, pistolR.rotation);
+            pistolRSource.PlayOneShot(pistolShot);
+        }
 
-        camOrbit.Shake(3);
+        camOrbit.Shake(2);
 
         //trigger arm anim
 

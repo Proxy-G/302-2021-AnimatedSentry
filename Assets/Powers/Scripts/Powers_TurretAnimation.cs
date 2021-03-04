@@ -44,9 +44,12 @@ public class Powers_TurretAnimation : MonoBehaviour
     private float turretAttackCooldown = 0.05f;
     Quaternion targetRot;
 
-
     private float wingAnimOffset = 0.15f;
 
+    [Space(10)]
+    public GameObject prefabTurretSmoke;
+    private bool initialDeathActionsDone = false;
+    private float turretDeathCountdown = 1.5f;
 
     // Start is called before the first frame update
     void Start()
@@ -249,6 +252,19 @@ public class Powers_TurretAnimation : MonoBehaviour
 
     private void Death()
     {
+        //Countdown until despawn
+        turretDeathCountdown -= Time.deltaTime;
+        
+        //Play SFX and disable target on first frame.
+        if (!initialDeathActionsDone)
+        {
+            turretAI.turretSource.PlayOneShot(turretAI.turretDieSFX);
+            turretAI.GetComponent<Powers_TargetableObject>().enabled = false;
+            Instantiate(prefabTurretSmoke, transform.position, transform.rotation);
+            turretAI.playerMovementScript.killCount += 1;
+        }
+        initialDeathActionsDone = true;
+        
         //Turret AI immediately gets deactivated to prevent the turret from moving or shooting.
         turretAI.agent.enabled = false;
         turretAI.enabled = false;
@@ -256,7 +272,7 @@ public class Powers_TurretAnimation : MonoBehaviour
         //Change and rotate eye to correct position.
         turretEye.material = deadEyeMat;
         turretEye.transform.localRotation = Powers_AnimMath.Slide(turretEye.transform.localRotation, Quaternion.Euler(0, 90, 45), 0.001f);
-        turretEye.transform.localScale = Powers_AnimMath.Slide(turretEye.transform.localScale, new Vector3(0.2f, 0.2f, 0.2f), 0.001f);
+        turretEye.transform.localScale = Powers_AnimMath.Slide(turretEye.transform.localScale, Vector3.zero, 0.1f);
 
         //These animate the turret's body.
         turretBody.localPosition = Powers_AnimMath.Slide(turretBody.localPosition, new Vector3(0, 0.3f, 0), 0.001f);
@@ -273,5 +289,11 @@ public class Powers_TurretAnimation : MonoBehaviour
 
         turretWingL.localRotation = Powers_AnimMath.Slide(turretWingL.localRotation, Quaternion.Euler(20, 0, 0), 0.001f);
         turretWingR.localRotation = Powers_AnimMath.Slide(turretWingR.localRotation, Quaternion.Euler(30, 0, 0), 0.001f);
+
+        //Shrink body to make destruction less obvious
+        transform.localScale = Powers_AnimMath.Slide(transform.localScale, new Vector3(0.75f, 0.75f, 0.75f), 0.5f);
+
+        //If countdown complete, destroy the turret
+        if (turretDeathCountdown < 0) Destroy(gameObject);
     }
 }

@@ -17,6 +17,9 @@ public class Powers_CamOrbit : MonoBehaviour
 
     private float yaw = 0;
     private float pitch = 0;
+
+    [HideInInspector]
+    public bool isDead = false;
     
     // Start is called before the first frame update
     void Start()
@@ -28,8 +31,8 @@ public class Powers_CamOrbit : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
-        PlayerOrbitCam();
-
+        if (!isDead) PlayerOrbitCam(); //only allow player to move camera when player is not dead
+        
         transform.position = moveScript.transform.position;
 
         //if aiming, set camera's rotation to look at target
@@ -111,7 +114,7 @@ public class Powers_CamOrbit : MonoBehaviour
     public void Shake(float intensity)
     {
         shakeIntensity += intensity;
-        shakeIntensity = Mathf.Clamp(shakeIntensity, 0, 10);
+        shakeIntensity = Mathf.Clamp(shakeIntensity, 0, 7);
     }
 
     private void ShakeCamera()
