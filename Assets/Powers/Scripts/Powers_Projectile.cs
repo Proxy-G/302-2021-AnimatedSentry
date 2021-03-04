@@ -4,17 +4,21 @@ using UnityEngine;
 
 public class Powers_Projectile : MonoBehaviour
 {
+    public bool infiniteLife = false;
     public float lifetime = 10;
+    public float damage = 0;
+    public float velocity = 0;
     public ParticleSystem prefabLazerHit;
 
     private void Update()
     {
         //countdown until lazer is automatically destroyed
-        lifetime -= Time.deltaTime;
+        if(!infiniteLife) lifetime -= Time.deltaTime;
 
-        transform.position += (-transform.forward * 8 * Time.deltaTime);
+        transform.position += (-transform.forward * velocity * Time.deltaTime);
 
-        if (lifetime <= 0) ProjectileDestroy();
+        //If lifetime is complete, destroy the projectile.
+        if (lifetime <= 0 && !infiniteLife) ProjectileDestroy();
     }
 
     private void OnTriggerEnter(Collider other)
@@ -25,7 +29,7 @@ public class Powers_Projectile : MonoBehaviour
         if (player)
         {
             Powers_HealthSystem playerHealth = player.GetComponent<Powers_HealthSystem>();
-            if (playerHealth) playerHealth.TakeDamage(10);
+            if (playerHealth) playerHealth.TakeDamage(damage);
         }
 
         ProjectileDestroy();
@@ -34,7 +38,7 @@ public class Powers_Projectile : MonoBehaviour
     private void ProjectileDestroy()
     {
         //spawn lazer hit particle system
-        Instantiate(prefabLazerHit, transform.position, transform.rotation);
+        if(prefabLazerHit != null) Instantiate(prefabLazerHit, transform.position, transform.rotation);
 
         //destroy particle
         Destroy(gameObject);

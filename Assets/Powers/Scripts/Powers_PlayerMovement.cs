@@ -4,15 +4,27 @@ using UnityEngine;
 
 public class Powers_PlayerMovement : MonoBehaviour
 {
+    public float walkSpeed = 2.5f;
+    public float gravityMultiplier = 10;
+    public float jumpImpulse = 5;
+
     private Camera cam;
     private CharacterController pawn;
-    public float walkSpeed = 2.5f;
+    private Powers_PlayerTargeting targetingSystem;
+    private Powers_HealthSystem healthSystem;
 
+    [Space(10)]
+    public Transform armL;
+    public Transform armR;
+    public Transform torso;
+    public Transform midsec;
     public Transform legL;
     public Transform legR;
 
-    public float gravityMultiplier = 10;
-    public float jumpImpulse = 5;
+    private Powers_CamOrbit camOrbit;
+    private Powers_PointAt torsoPoint;
+    private Powers_PointAt armPointL;
+    private Powers_PointAt armPointR;
 
     private float timeLeftGrounded = 0;
     private bool jumpAnimLegsSwitch = true;
@@ -36,18 +48,31 @@ public class Powers_PlayerMovement : MonoBehaviour
     void Start()
     {
         cam = Camera.main;
+        camOrbit = cam.GetComponentInParent<Powers_CamOrbit>();
         pawn = GetComponent<CharacterController>();
+
+        targetingSystem = GetComponent<Powers_PlayerTargeting>();
+        healthSystem = GetComponent<Powers_HealthSystem>();
+
+        torsoPoint = torso.GetComponent<Powers_PointAt>();
+        armPointL = armL.GetComponent<Powers_PointAt>();
+        armPointR = armR.GetComponent<Powers_PointAt>();
     }
 
     // Update is called once per frame
     void Update()
     {
-        //coyote time countdown:
-        if (timeLeftGrounded > 0) timeLeftGrounded -= Time.deltaTime;
-        
-        MovePlayer();
-        if (pawn.isGrounded) WiggleLegs(); //idle + walk
-        else AirLegs(); //jump + falling
+        //Check if player is dead. If so, perform death actions. If not, allow gameplay.
+        if (healthSystem.health == 0) Death();
+        else
+        {
+            //coyote time countdown:
+            if (timeLeftGrounded > 0) timeLeftGrounded -= Time.deltaTime;
+
+            MovePlayer();
+            if (pawn.isGrounded) WiggleLegs(); //idle + walk
+            else AirLegs(); //jump + falling
+        }
     }
 
     private void MovePlayer()
@@ -126,5 +151,29 @@ public class Powers_PlayerMovement : MonoBehaviour
             legL.localRotation = Powers_AnimMath.Slide(legL.localRotation, Quaternion.Euler(-30, 0, 0), 0.05f);
             legR.localRotation = Powers_AnimMath.Slide(legR.localRotation, Quaternion.Euler(30, 0, 0), 0.05f);
         }
-    }    
+    }
+    
+    private void Death()
+    {
+        //Disable char controller and scripts affecting animation
+        pawn.enabled = false;
+        camOrbit.enabled = false;
+        targetingSystem.enabled = false;
+
+        torsoPoint.enabled = false;
+        armPointL.enabled = false;
+        armPointR.enabled = false;
+
+        //Perform animations
+        midsec.localPosition = Powers_AnimMath.Slide(midsec.localPosition, new Vector3(0, -0.95f, 1.2f), 0.008f);
+        midsec.localRotation = Powers_AnimMath.Slide(midsec.localRotation, Quaternion.Euler(88, 0, 0), 0.01f);
+        torso.localRotation = Powers_AnimMath.Slide(torso.localRotation, Quaternion.Euler(0, 0, 0), 0.01f);
+
+        armL.localRotation = Powers_AnimMath.Slide(armL.localRotation, Quaternion.Euler(-81, 0, 0), 0.01f);
+        armR.localRotation = Powers_AnimMath.Slide(armR.localRotation, Quaternion.Euler(-81, 0, 0), 0.01f);
+
+        legL.localRotation = Powers_AnimMath.Slide(legL.localRotation, Quaternion.Euler(0, 0, 0), 0.01f);
+        legR.localRotation = Powers_AnimMath.Slide(legR.localRotation, Quaternion.Euler(0, 0, 0), 0.01f);
+
+    }
 }

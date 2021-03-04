@@ -62,7 +62,7 @@ public class Powers_CamOrbit : MonoBehaviour
         if (!hitObject) Physics.Raycast(transform.position, -transform.forward + new Vector3(0, -1f, 0), out hit, dis, LayerMask.GetMask("Default"));
 
         if (hitObject) cam.transform.localPosition = Powers_AnimMath.Slide(cam.transform.localPosition, new Vector3(0, 0, -hit.distance + .5f), 0.000001f);
-        else cam.transform.localPosition = Powers_AnimMath.Slide(cam.transform.localPosition, new Vector3(0, 0, -dis), 0.001f);
+        else cam.transform.localPosition = Powers_AnimMath.Slide(cam.transform.localPosition, new Vector3(0, 0, -dis + .5f), 0.001f);
     }
 
     private void RotateCamToLookAtTarget()

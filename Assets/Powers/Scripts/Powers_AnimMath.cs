@@ -15,6 +15,11 @@ public static class Powers_AnimMath
         return (max - min) * p + min;
     }
 
+    public static Vector3 Lerp(Vector3 min, Vector3 max, float p)
+    {
+        return (max - min) * p + min;
+    }
+
     public static Vector3 Lerp(Vector3 min, Vector3 max, float p, bool allowExtrapolation)
     {
         if (!allowExtrapolation)
@@ -26,8 +31,18 @@ public static class Powers_AnimMath
         return (max - min) * p + min;
     }
 
-    public static Vector3 Lerp(Vector3 min, Vector3 max, float p)
+    public static Vector2 Lerp(Vector2 min, Vector2 max, float p)
     {
+        return (max - min) * p + min;
+    }
+    public static Vector2 Lerp(Vector2 min, Vector2 max, float p, bool allowExtrapolation)
+    {
+        if (!allowExtrapolation)
+        {
+            if (p < 0) return min;
+            if (p > 1) return max;
+        }
+
         return (max - min) * p + min;
     }
 
@@ -51,6 +66,11 @@ public static class Powers_AnimMath
     {
         float p = 1 - Mathf.Pow(percentLeftAfter1Second, Time.deltaTime);
         return Powers_AnimMath.Lerp(current, target, p, true);
+    }
+    public static Vector2 Slide(Vector2 current, Vector2 target, float percentLeftAfter1Second)
+    {
+        float p = 1 - Mathf.Pow(percentLeftAfter1Second, Time.deltaTime);
+        return Powers_AnimMath.Lerp(current, target, p);
     }
 
     public static Quaternion Slide(Quaternion current, Quaternion target, float percentLeftAfter1Second)

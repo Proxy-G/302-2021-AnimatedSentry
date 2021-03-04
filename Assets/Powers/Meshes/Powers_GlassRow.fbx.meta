@@ -61,7 +61,7 @@ ModelImporter:
     secondaryUVHardAngle: 89
     secondaryUVMarginMethod: 1
     secondaryUVMinLightmapResolution: 2
-    secondaryUVMinObjectScale: 0.75
+    secondaryUVMinObjectScale: 0.7
     secondaryUVPackMargin: 4
     useFileScale: 1
   tangentSpace:

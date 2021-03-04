@@ -6,10 +6,12 @@ public class Powers_PlayerTargeting : MonoBehaviour
 {
     public Transform target;
     public Powers_CamOrbit camOrbit;
-    public bool wantsToTarget;
-    public bool wantsToAttack;
     public float visionDistance = 10;
     public float visionAngle = 45;
+
+    [HideInInspector]
+    public bool wantsToTarget;
+    private bool wantsToAttack;
 
     //references player arm bones
     public Transform armL;
@@ -22,8 +24,9 @@ public class Powers_PlayerTargeting : MonoBehaviour
     /// references particle system for gun muzzle flash
     /// </summary>
     public ParticleSystem prefabMuzzleFlash;
-    public Transform handL;
-    public Transform handR;
+    public Transform pistolL;
+    public Transform pistolR;
+    private bool pistolLNext = true;
 
     private List<Powers_TargetableObject> potentialTargets = new List<Powers_TargetableObject>();
 
@@ -137,19 +140,22 @@ public class Powers_PlayerTargeting : MonoBehaviour
 
         //attack!
 
-        if(handL) Instantiate(prefabMuzzleFlash, handL.position, handL.rotation);
-        if(handR) Instantiate(prefabMuzzleFlash, handR.position, handR.rotation);
+        if(pistolL && pistolLNext) Instantiate(prefabMuzzleFlash, pistolL.position, pistolL.rotation);
+        if(pistolR && !pistolLNext) Instantiate(prefabMuzzleFlash, pistolR.position, pistolR.rotation);
+
         camOrbit.Shake(3);
 
         //trigger arm anim
 
         //rotates arms up:
-        armL.localEulerAngles += new Vector3(-15, 0, 0);
-        armR.localEulerAngles += new Vector3(-15, 0, 0);
+        if(pistolLNext) armL.localEulerAngles += new Vector3(-15, 0, 0);
+        else armR.localEulerAngles += new Vector3(-15, 0, 0);
 
         //move arms back:
-        armL.position += -armL.transform.forward * .05f;
-        armR.position += -armR.transform.forward * .05f;
+        if (pistolLNext) armL.position += -armL.transform.forward * .05f;
+        else armR.position += -armR.transform.forward * .05f;
+
+        pistolLNext = !pistolLNext;
     }
 
     private void SlideArmsHome()

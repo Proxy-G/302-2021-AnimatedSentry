@@ -4,12 +4,20 @@ using UnityEngine;
 
 public class Powers_HealthSystem : MonoBehaviour
 {
-    public float health { get; private set; }
+    [HideInInspector]
+    public float health;
     public float maxHealth = 100;
+    public float regenSpeed = 0;
 
     private void Start()
     {
         health = maxHealth;
+    }
+
+    public void Update()
+    {
+        if(health > 0) health += regenSpeed * Time.deltaTime;
+        health = Mathf.Clamp(health, 0, maxHealth);
     }
 
     public void TakeDamage(float damage){
@@ -18,12 +26,5 @@ public class Powers_HealthSystem : MonoBehaviour
 
         health -= damage;
 
-        if (health <= 0) Die();
-    }
-
-    public void Die()
-    {
-        //removes this gameobject from the game:
-        Destroy(gameObject);
     }
 }
